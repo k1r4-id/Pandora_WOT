@@ -4062,6 +4062,18 @@ function vora_ui:BuildMainFrame()
         Size = UDim2.new(0, headerAvatarSize, 0, headerAvatarSize), Parent = self.main_frame
     })
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.avatar_image})
+
+    -- Custom logo image (config.Logo): sits between the name text and the avatar
+    if self.config.Logo and type(self.config.Logo) == "string" and self.config.Logo ~= "" then
+        local logoSize = headerAvatarSize
+        local logoX = avatarX - logoSize - 6 * scale_factor
+        self.logo_image = create("ImageLabel", {
+            Image = pandora_logo, BackgroundTransparency = 1,
+            Position = UDim2.new(0, logoX, 0, 17 * scale_factor),
+            Size = UDim2.new(0, logoSize, 0, logoSize), Parent = self.main_frame
+        })
+        create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = self.logo_image})
+    end
     
     self.separator_line = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
