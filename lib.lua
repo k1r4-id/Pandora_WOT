@@ -70,8 +70,25 @@ local default_icons = {
 }
 
 -- Custom Logo Image
-local pandora_img   = writefile("pandora_logo.png", game:HttpGet("https://github.com/vorahubjaya-design/Lib/raw/main/newlogo.png"))
-local pandora_logo  = getcustomasset("pandora_logo.png")
+-- Default URL; can be overridden per-window by passing { Logo = "https://..." } to vora_ui.new()
+local DEFAULT_LOGO_URL = "https://github.com/vorahubjaya-design/Lib/raw/main/newlogo.png"
+local pandora_logo
+
+local function loadLogoFromUrl(url, filenameSuffix)
+    url = url or DEFAULT_LOGO_URL
+    local fname = "pandora_logo" .. (filenameSuffix and ("_" .. filenameSuffix) or "") .. ".png"
+    local ok = pcall(function()
+        writefile(fname, game:HttpGet(url))
+        pandora_logo = getcustomasset(fname)
+    end)
+    if not ok or not pandora_logo then
+        pandora_logo = "rbxassetid://10709768141" -- fallback
+    end
+    return pandora_logo
+end
+
+-- Load default at module load
+loadLogoFromUrl()
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
@@ -793,6 +810,11 @@ function vora_ui.new(config)
     self.config.TextColor = self.config.TextColor or Color3.fromRGB(255, 255, 255)
     self.config.SubTextColor = self.config.SubTextColor or Color3.fromRGB(124, 124, 124)
     self.config.Footer = self.config.Footer or "Pandora Library | v1.2.0"
+
+    -- Custom logo per window: pass Logo = "https://..." to override default
+    if self.config.Logo and type(self.config.Logo) == "string" and self.config.Logo ~= "" then
+        loadLogoFromUrl(self.config.Logo, tostring(self.config.Name))
+    end
     
     self.Toggles = Toggles
     self.Options = Options
@@ -853,8 +875,8 @@ function vora_ui.new(config)
     self._refreshJobs = {}
     self._notificationTimestamps = {}
     self._uiVisualSettings = {
-        Blur = false,
-        Snow = false,
+        Blur = true,
+        Snow = true,
         BackgroundEffects = false,
         TextGradient = true,
         ESPSelfPreview = false,
