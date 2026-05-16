@@ -6464,7 +6464,7 @@ function vora_ui:AddSection(config)
                 })
                 
                 multiDropdownObj.optionHolderFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(15, 15, 20), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(15, 15, 20), Size = UDim2.new(0, 240 * scale_factor, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
@@ -6489,8 +6489,8 @@ function vora_ui:AddSection(config)
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownCloseButton})
                 
                 multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
-                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30 * scale_factor),
-                    Size = UDim2.new(1, 0, 1, -35 * scale_factor), ScrollBarThickness = 0,
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 58 * scale_factor),
+                    Size = UDim2.new(1, 0, 1, -63 * scale_factor), ScrollBarThickness = 0,
                     ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
                     ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
                 })
@@ -6508,7 +6508,29 @@ function vora_ui:AddSection(config)
                     BackgroundTransparency = 1, Size = UDim2.new(1, -6, 0, 0),
                     ZIndex = 10000, Parent = multiDropdownObj.optionScrollFrame
                 })
-                
+
+                -- Search bar (ported from AddDropdown for parity)
+                local search_query = ""
+                local search_textbox
+
+                local search_frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0,
+                    Position = UDim2.new(0, 8, 0, 32 * scale_factor),
+                    Size = UDim2.new(1, -16, 0, 22 * scale_factor),
+                    ZIndex = 10001, Parent = multiDropdownObj.optionHolderFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = search_frame})
+                create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Thickness = 1, Parent = search_frame})
+
+                search_textbox = create("TextBox", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
+                    TextColor3 = Color3.fromRGB(200, 200, 200), PlaceholderColor3 = Color3.fromRGB(70, 70, 70),
+                    PlaceholderText = "Search...", Text = "", BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                    Size = UDim2.new(1, -16, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    ClearTextOnFocus = false, ZIndex = 10002, Parent = search_frame
+                })
+
                 local maxMultiDropdownHeight = 220 * scale_factor
                 local multiDropdownPositionConn = nil
 
@@ -6518,15 +6540,19 @@ function vora_ui:AddSection(config)
                         multiDropdownPositionConn()
                         multiDropdownPositionConn = nil
                     end
+                    if search_textbox then
+                        search_textbox.Text = ""
+                        search_query = ""
+                    end
                     if isInstant then
-                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
+                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 240 * scale_factor, 0, 0)
                         multiDropdownObj.optionHolderFrame.Visible = false
                         multiDropdownObj.arrowImg.Rotation = 0
                         multiDropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
                         dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
                         return
                     end
-                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 240 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.arrowImg, {Rotation = 0}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
                     tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
@@ -6547,15 +6573,18 @@ function vora_ui:AddSection(config)
                     tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(24, 24, 24), TextColor3 = Color3.fromRGB(138, 138, 138)}, 0.12)
                 end)
 
-                local function createMultiOptionsYay()
+                local function createMultiOptionsYay(filter_text)
                     for _, child in pairs(multiDropdownObj.optionContainerFrame:GetChildren()) do
                         if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
                     end
                     local optY = 0
                     local dropdownOptions = multiDropdownConfig.Options or {}
                     for _, option in ipairs(dropdownOptions) do
+                        if filter_text and filter_text ~= "" and not string.find(tostring(option):lower(), filter_text:lower(), 1, true) then
+                            -- skip filtered out
+                        else
                         local isSelected = multiDropdownObj.selectedValues[option] == true
-                        
+
                         local optionFrame = create("Frame", {
                             BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
                             Size = UDim2.new(1, 0, 0, 22 * scale_factor), ZIndex = 10001,
@@ -6623,12 +6652,22 @@ function vora_ui:AddSection(config)
                         end)
                         
                         optY = optY + 24 * scale_factor
-                    end
+                        end -- close else
+                    end -- close for
                     multiDropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
                     multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
+                    if multiDropdownObj.isOpen then
+                        local target_h = math.min((63 + optY / scale_factor) * scale_factor, maxMultiDropdownHeight)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 240 * scale_factor, 0, target_h)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    end
                 end
                 createMultiOptionsYay()
-                
+
+                search_textbox:GetPropertyChangedSignal("Text"):Connect(function()
+                    search_query = search_textbox.Text
+                    createMultiOptionsYay(search_query)
+                end)
+
                 local dropdownClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = multiDropdownObj.button_frame})
                 
                 local function updateDropdownPositionYay()
@@ -6642,9 +6681,9 @@ function vora_ui:AddSection(config)
                     if multiDropdownObj.isOpen then
                         updateDropdownPositionYay()
                         multiDropdownObj.optionHolderFrame.Visible = true
-                        local contentHeight = (38 + (#multiDropdownConfig.Options * 24)) * scale_factor
+                        local contentHeight = (66 + (#multiDropdownConfig.Options * 24)) * scale_factor
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 240 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         if multiDropdownPositionConn then multiDropdownPositionConn() end
                         multiDropdownPositionConn = start_position_tracker(groupObj.Library, multiDropdownObj.button_frame, function()
