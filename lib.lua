@@ -3651,9 +3651,10 @@ function vora_ui:BuildToggleButton()
         BackgroundTransparency = 1,
         Image = pandora_logo,
         ImageColor3 = Color3.new(1, 1, 1),
+        ScaleType = Enum.ScaleType.Fit,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, btn_size * 0.85, 0, btn_size * 0.85),
+        Size = UDim2.new(0, btn_size * 1.05, 0, btn_size * 1.05),
         Parent = self.toggle_frame
     })
 
@@ -3667,9 +3668,9 @@ function vora_ui:BuildToggleButton()
 
     toggle_btn.MouseButton1Click:Connect(function()
         self:Toggle()
-        tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.65, 0, btn_size * 0.65)}, 0.1)
+        tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.8, 0, btn_size * 0.8)}, 0.1)
         task.delay(0.1, function()
-            tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.85, 0, btn_size * 0.85)}, 0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 1.05, 0, btn_size * 1.05)}, 0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
         end)
     end)
 
@@ -4056,6 +4057,7 @@ function vora_ui:BuildMainFrame()
     })
     self:_SetNameHidden(self._uiVisualSettings.HideName)
     
+    -- Avatar always at its original computed position (don't shift based on logo)
     self.avatar_image = create("ImageLabel", {
         Image = get_player_avatar(local_player.UserId), BackgroundTransparency = 1,
         Position = UDim2.new(0, avatarX, 0, 17 * scale_factor),
@@ -4063,16 +4065,19 @@ function vora_ui:BuildMainFrame()
     })
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.avatar_image})
 
-    -- Custom logo image (config.Logo): sits between the name text and the avatar
+    -- Custom logo image (config.Logo): sits snug to the text on the left,
+    -- in the space between text and avatar. Avatar position is unchanged.
     if self.config.Logo and type(self.config.Logo) == "string" and self.config.Logo ~= "" then
-        local logoSize = headerAvatarSize
-        local logoX = avatarX - logoSize - 6 * scale_factor
+        local logoSize = 50 * scale_factor
+        local logoX = headerLeftPadding + hubNameWidth - 4 * scale_factor
         self.logo_image = create("ImageLabel", {
             Image = pandora_logo, BackgroundTransparency = 1,
-            Position = UDim2.new(0, logoX, 0, 17 * scale_factor),
+            ScaleType = Enum.ScaleType.Fit,
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, logoX, 0, 32 * scale_factor),
             Size = UDim2.new(0, logoSize, 0, logoSize), Parent = self.main_frame
         })
-        create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = self.logo_image})
+        create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = self.logo_image})
     end
     
     self.separator_line = create("Frame", {
@@ -4741,7 +4746,8 @@ function vora_ui:Notify(config)
     config.Description = tostring(config.Description or "")
     config.Duration = tonumber(config.Duration) or 3
     config.Duration = math.max(0.8, config.Duration)
-    config.Icon = config.Icon or pandora_logo or "rbxassetid://10709768141"
+    -- Resolve via get_icon so Lucide names ("bell", "circle-check", etc.) work
+    config.Icon = get_icon(config.Icon, pandora_logo or "rbxassetid://10709768141")
 
     if self._destroyed or self._isApplyingConfig then
         return nil
@@ -4772,14 +4778,14 @@ function vora_ui:Notify(config)
         )
     end
     
-    local notifWidth = math.max(190 * scale_factor, math.min(310 * scale_factor, math.max(titleBounds.X, descBounds.X) + 84 * scale_factor))
-    local notifHeight = hasDescription and (66 * scale_factor) or (52 * scale_factor)
+    local notifWidth = math.max(170 * scale_factor, math.min(270 * scale_factor, math.max(titleBounds.X, descBounds.X) + 70 * scale_factor))
+    local notifHeight = hasDescription and (58 * scale_factor) or (46 * scale_factor)
     
     local notificationFrame = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(14, 14, 14),
+        BackgroundColor3 = Color3.fromRGB(18, 18, 22),
         Position = UDim2.new(-1.25, 0, 0, 0),
         Size = UDim2.new(0, notifWidth, 0, notifHeight),
-        BackgroundTransparency = 0.18,
+        BackgroundTransparency = 0,
         ClipsDescendants = true,
         Parent = self.notification_holder
     })
@@ -4789,36 +4795,10 @@ function vora_ui:Notify(config)
         Thickness = 1.1,
         Parent = notificationFrame
     })
-    create("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 24, 24)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 20))
-        }),
-        Rotation = 22,
-        Parent = notificationFrame
-    })
     local uiScaleRef = create("UIScale", {Scale = 0.88, Parent = notificationFrame})
     
-    local glowEffect = create("ImageLabel", {
-        Name = "NotifGlow",
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://5028857084",
-        ImageColor3 = self.config.AccentColor,
-        ImageTransparency = 0.92,
-        Position = UDim2.new(0.25, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Size = UDim2.new(1.8, 0, 2, 0),
-        ZIndex = 0,
-        Parent = notificationFrame
-    })
-    
-    local accentBar = create("Frame", {
-        BackgroundColor3 = self.config.AccentColor,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(0, 4 * scale_factor, 1, 0),
-        Parent = notificationFrame
-    })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = accentBar})
+    -- (Removed left accent bar — caused visible step at the rounded corner.
+    --  The icon circle + accent-colored stroke already provides enough accent.)
     
     local iconHolder = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(24, 24, 24),
@@ -4909,9 +4889,8 @@ function vora_ui:Notify(config)
     
     task.defer(function()
         if not notificationFrame or not notificationFrame.Parent then return end
-        tween_to(notificationFrame, {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0.05}, 0.44, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        tween_to(notificationFrame, {Position = UDim2.new(0, 0, 0, 0)}, 0.44, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
         tween_to(uiScaleRef, {Scale = 1}, 0.44, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-        tween_to(glowEffect, {ImageTransparency = 0.8}, 0.3)
         tween_to(notificationStroke, {Color = self.config.AccentColor:Lerp(Color3.fromRGB(24, 24, 24), 0.65)}, 0.3)
         tween_to(notifImageLabel, {ImageTransparency = 0}, 0.24)
         tween_to(notifTitle, {TextTransparency = 0}, 0.24)
@@ -4924,12 +4903,22 @@ function vora_ui:Notify(config)
     task.delay(config.Duration, function()
         if notificationFrame and notificationFrame.Parent then
             progressTween:Cancel()
-            tween_to(glowEffect, {ImageTransparency = 1}, 0.2)
+            -- Fade ALL visible children so no ghost outline / iconHolder / progress
+            -- bar / stroke remains after notif fade-out.
             tween_to(notifImageLabel, {ImageTransparency = 1}, 0.2)
             tween_to(notifTitle, {TextTransparency = 1}, 0.2)
             if notifDescription then
                 tween_to(notifDescription, {TextTransparency = 1}, 0.2)
             end
+            pcall(function() tween_to(notificationStroke, {Transparency = 1}, 0.2) end)
+            pcall(function() tween_to(iconHolder, {BackgroundTransparency = 1}, 0.2) end)
+            for _, child in ipairs(iconHolder:GetChildren()) do
+                if child:IsA("UIStroke") then
+                    pcall(function() tween_to(child, {Transparency = 1}, 0.2) end)
+                end
+            end
+            pcall(function() tween_to(progressTrack, {BackgroundTransparency = 1}, 0.2) end)
+            pcall(function() tween_to(progressFill, {BackgroundTransparency = 1}, 0.2) end)
             tween_to(notificationFrame, {Position = UDim2.new(-1.25, 0, 0, 0), BackgroundTransparency = 1}, 0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             tween_to(uiScaleRef, {Scale = 0.9}, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             task.wait(0.4)
@@ -6263,7 +6252,18 @@ function vora_ui:AddSection(config)
                 dropdownObj.Changed = dropdownConfig.Callback
                 
                 function dropdownObj:Set(value, silent)
-                    if value == nil then return end
+                    if value == nil then
+                        if not dropdownConfig.AllowNull then return end
+                        -- Clear selection (e.g. after Refresh in SaveManager)
+                        dropdownObj.value = nil
+                        dropdownObj.Value = nil
+                        dropdownObj.selectedLabelText.Text = "None"
+                        createOptionsYay()
+                        if not silent and dropdownObj.Changed then
+                            dropdownObj.Changed(nil)
+                        end
+                        return
+                    end
                     dropdownObj.value = value
                     dropdownObj.Value = dropdownObj.value
                     local displayValue = tostring(value)
@@ -6279,7 +6279,9 @@ function vora_ui:AddSection(config)
                 function dropdownObj:Get()
                     return dropdownObj.value
                 end
-                
+                -- Alias for SaveManager / older API compatibility
+                function dropdownObj:SetValue(value, silent) dropdownObj:Set(value, silent) end
+
                 function dropdownObj:OnChanged(callback)
                     dropdownObj.Changed = callback
                 end
@@ -6794,6 +6796,8 @@ function vora_ui:AddSection(config)
                 function multiDropdownObj:SetValues(newOptions)
                     multiDropdownObj:UpdateOptions(newOptions)
                 end
+                -- Alias for SaveManager / older API compatibility
+                function multiDropdownObj:SetValue(values, silent) multiDropdownObj:Set(values, silent) end
 
                 if multiDropdownConfig.AutoRefresh then
                     groupObj.Library:_RegisterRefreshJob(multiDropdownConfig.RefreshInterval, function()
@@ -6854,7 +6858,8 @@ function vora_ui:AddSection(config)
             
             function groupObj:AddLabel(labelConfig)
                 labelConfig = labelConfig or {}
-                labelConfig.Text = labelConfig.Text or "Label"
+                -- Accept Name as alias for Text (some callers / SaveManager use Name)
+                labelConfig.Text = labelConfig.Text or labelConfig.Name or "Label"
                 labelConfig.Wrap = labelConfig.Wrap == true
                 labelConfig.RichText = labelConfig.RichText ~= false
                 addSearchTerm(labelConfig.Text)
@@ -6903,9 +6908,13 @@ function vora_ui:AddSection(config)
             end
             
             function groupObj:AddTextInput(textInputConfig, config)
-                -- Support old API: AddTextInput(name, config)
+                -- Support old API: AddTextInput(name, config) — name is the FLAG/index;
+                -- prefer config.Text for the user-facing label so e.g.
+                -- AddTextInput("SaveManager_ConfigName", {Text="Config name"}) shows "Config name".
                 if type(textInputConfig) == "string" then
-                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
+                    local idx = textInputConfig
+                    local labelText = (config and config.Text) or idx
+                    textInputConfig = {Name = labelText, Flag = idx, Text = labelText, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
                 end
 
                 textInputConfig = textInputConfig or {}
@@ -6937,6 +6946,7 @@ function vora_ui:AddSection(config)
                     BackgroundColor3 = Color3.fromRGB(32, 32, 32),
                     Position = UDim2.new(0, 10, 0, yPosition + 23 * scale_factor),
                     Size = UDim2.new(0, 240 * scale_factor, 0, 28 * scale_factor),
+                    ClipsDescendants = true,
                     Parent = groupObj.mainFrame
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = textInputObj.inputFrame})
