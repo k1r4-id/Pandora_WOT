@@ -406,9 +406,15 @@ function PandoruyHub:MakeNotify(NotifyConfig)
         NotifyFrameReal.BorderColor3 = Color3.fromRGB(0, 0, 0)
         NotifyFrameReal.BorderSizePixel = 0
         NotifyFrameReal.Position = UDim2.new(0, 400, 0, 0)
-        NotifyFrameReal.Size = UDim2.new(1, 0, 1, 0)
+        -- Was (1, 0, 1, 0): scale Y=1 + parent AutomaticSize.Y bikin feedback loop melar full screen.
+        NotifyFrameReal.Size = UDim2.new(1, 0, 0, 0)
+        NotifyFrameReal.AutomaticSize = Enum.AutomaticSize.Y
         NotifyFrameReal.Name = "NotifyFrameReal"
         NotifyFrameReal.Parent = NotifyFrame
+
+        local NotifyPadding = Instance.new("UIPadding")
+        NotifyPadding.PaddingBottom = UDim.new(0, 10)
+        NotifyPadding.Parent = NotifyFrameReal
 
         UICorner.Parent = NotifyFrameReal
         UICorner.CornerRadius = UDim.new(0, 8)
